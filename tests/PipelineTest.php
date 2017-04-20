@@ -67,6 +67,41 @@ class PipelineTest extends TestCase
         unset($_SERVER['__test.pipe.parameters']);
     }
 
+    public function testPipelineUsageWithMultiplePassables()
+    {
+
+        $pipeOne = function ($piped, $pipedTwo, $next) {
+            $_SERVER['__test.pipe.one_1'] = $piped;
+            $_SERVER['__test.pipe.one_2'] = $pipedTwo;
+
+            return $next($piped, $pipedTwo);
+        };
+        $pipeTwo = function ($piped, $pipedTwo, $next) {
+            $_SERVER['__test.pipe.two_1'] = $piped;
+            $_SERVER['__test.pipe.two_2'] = $pipedTwo;
+
+            return $next($piped, $pipedTwo);
+        };
+
+        $result = (new Pipeline())
+            ->send('foo', 'bar')
+            ->through([$pipeOne, $pipeTwo])
+            ->then(function ($piped, $pipedTwo) {
+                return [$piped, $pipedTwo];
+            });
+
+        $this->assertEquals(['foo', 'bar'], $result);
+        $this->assertEquals('foo', $_SERVER['__test.pipe.one_1']);
+        $this->assertEquals('bar', $_SERVER['__test.pipe.one_2']);
+        $this->assertEquals('foo', $_SERVER['__test.pipe.two_1']);
+        $this->assertEquals('bar', $_SERVER['__test.pipe.two_2']);
+
+        unset($_SERVER['__test.pipe.one_1']);
+        unset($_SERVER['__test.pipe.one_2']);
+        unset($_SERVER['__test.pipe.two_1']);
+        unset($_SERVER['__test.pipe.two_2']);
+    }
+
     public function testPipelineViaChangesTheMethodBeingCalledOnThePipes()
     {
         $pipelineInstance = new Pipeline();
