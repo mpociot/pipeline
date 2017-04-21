@@ -22,6 +22,13 @@ class Pipeline
     protected $pipes = [];
 
     /**
+     * The additional parameters.
+     *
+     * @var array
+     */
+    protected $parameters = [];
+
+    /**
      * The method to call on each pipe.
      *
      * @var string
@@ -68,6 +75,19 @@ class Pipeline
     }
 
     /**
+     * Set the additional parameters to send
+     *
+     * @param  mixed  $parameters
+     * @return $this
+     */
+    public function with(...$parameters)
+    {
+        $this->parameters = $parameters;
+
+        return $this;
+    }
+
+    /**
      * Run the pipeline with a final destination callback.
      *
      * @param  \Closure  $destination
@@ -106,6 +126,8 @@ class Pipeline
             return function () use ($stack, $pipe) {
                 $passable = func_get_args();
                 $passable[] = $stack;
+                $passable = array_merge($passable, $this->parameters);
+
                 if (is_callable($pipe)) {
                     // If the pipe is an instance of a Closure, we will just call it directly but
                     // otherwise we'll resolve the pipes out of the container and call it with

@@ -102,6 +102,42 @@ class PipelineTest extends TestCase
         unset($_SERVER['__test.pipe.two_2']);
     }
 
+    public function testPipelineUsageWithMultipleParameters()
+    {
+
+        $pipeOne = function ($piped, $next, $pipedTwo) {
+            $_SERVER['__test.pipe.one_1'] = $piped;
+            $_SERVER['__test.pipe.one_2'] = $pipedTwo;
+
+            return $next($piped);
+        };
+        $pipeTwo = function ($piped, $next, $pipedTwo) {
+            $_SERVER['__test.pipe.two_1'] = $piped;
+            $_SERVER['__test.pipe.two_2'] = $pipedTwo;
+
+            return $next($piped);
+        };
+
+        $result = (new Pipeline())
+            ->send('foo')
+            ->through([$pipeOne, $pipeTwo])
+            ->with('bar')
+            ->then(function ($piped) {
+                return $piped;
+            });
+
+        $this->assertEquals('foo', $result);
+        $this->assertEquals('foo', $_SERVER['__test.pipe.one_1']);
+        $this->assertEquals('bar', $_SERVER['__test.pipe.one_2']);
+        $this->assertEquals('foo', $_SERVER['__test.pipe.two_1']);
+        $this->assertEquals('bar', $_SERVER['__test.pipe.two_2']);
+
+        unset($_SERVER['__test.pipe.one_1']);
+        unset($_SERVER['__test.pipe.one_2']);
+        unset($_SERVER['__test.pipe.two_1']);
+        unset($_SERVER['__test.pipe.two_2']);
+    }
+
     public function testPipelineViaChangesTheMethodBeingCalledOnThePipes()
     {
         $pipelineInstance = new Pipeline();
